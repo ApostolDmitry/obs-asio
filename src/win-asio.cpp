@@ -338,11 +338,14 @@ void register_asio_source()
 	obs_register_source(&asio_input_capture);
 }
 
+const char *PLUGIN_VERSION = "@CMAKE_PROJECT_VERSION@";
+
 bool obs_module_load(void)
 {
 	list = new ASIOAudioIODeviceList();
 	list->scanForDevices();
 	register_asio_source();
+	info("plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	return true;
 }
 
