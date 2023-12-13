@@ -115,7 +115,9 @@ static void *asio_input_create(obs_data_t *settings, obs_source_t *source)
 	data->asio_device = nullptr;
 	for (int i = 0; i < maxNumASIODevices; i++)
 		data->asio_client_index[i] = -1; // not a client if negative;
-	data->out_channels = get_obs_output_channels();
+	speaker_layout layout = (speaker_layout)obs_data_get_int(settings, "speaker_layout");
+	int recorded_channels = get_audio_channels(layout);
+	data->out_channels = recorded_channels;
 	data->stopping = false;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		data->route[i] = -1;
@@ -164,6 +166,10 @@ static bool fill_out_channels_modified(void *vptr, obs_properties_t *props, obs_
 		int input_channels = (int)in_names.size();
 		for (int i = 0; i < input_channels; i++)
 			obs_property_list_add_int(chanlist, in_names[i].c_str(), i);
+		for (int i = input_channels; i < MAX_AUDIO_CHANNELS; i++) {
+			std::string route_str = "route " + std::to_string(i);
+			obs_data_set_int(settings, route_str.c_str(), -1);
+		}
 		// store the number of input channels for the device
 		data->in_channels = input_channels;
 	}
@@ -200,7 +206,6 @@ static bool asio_device_changed(void *vptr, obs_properties_t *props, obs_propert
 		for (i = 0; i < max_channels; i++) {
 			std::string name = "route " + std::to_string(i);
 			route[i] = obs_properties_get(props, name.c_str());
-			obs_property_list_clear(route[i]);
 			obs_property_set_modified_callback2(route[i], fill_out_channels_modified, data);
 			fill_out_channels_modified(data, props, route[i], settings);
 			obs_property_set_visible(route[i], i < output_channels);
@@ -221,11 +226,11 @@ static bool asio_layout_changed(void *vptr, obs_properties_t *props, obs_propert
 	int max_channels = MAX_AUDIO_CHANNELS;
 	speaker_layout layout = (speaker_layout)obs_data_get_int(settings, "speaker_layout");
 	int recorded_channels = get_audio_channels(layout);
+	data->out_channels = recorded_channels;
 	int i = 0;
 	for (i = 0; i < max_channels; i++) {
 		std::string name = "route " + std::to_string(i);
 		obs_property_t *r = obs_properties_get(props, name.c_str());
-		obs_property_list_clear(r);
 		obs_property_set_modified_callback2(r, fill_out_channels_modified, data);
 		fill_out_channels_modified(data, props, r, settings);
 		obs_property_set_visible(r, i < recorded_channels);

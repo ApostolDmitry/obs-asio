@@ -1246,6 +1246,8 @@ private:
 		out.frames = samps;
 
 		for (int idx = 0; idx < obs_clients.size(); idx++) {
+			output_channels = obs_clients[idx]->out_channels;
+			out.speakers = (enum speaker_layout)output_channels;
 			for (int j = 0; j < output_channels; j++) {
 				if (obs_clients[idx] != nullptr) {
 					if (obs_clients[idx]->route[j] >= 0 && !obs_clients[idx]->stopping)
