@@ -311,8 +311,7 @@ typedef struct ASIOChannelInfo
  */
 typedef struct ASIOBufferInfo
 {
-	ASIOBool isInput; /*also https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln2235 , type ASIOBool since it can be ASIOTrue
-	*/
+	ASIOBool isInput; /*also https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln2235 , type ASIOBool since it can be ASIOTrue */
 	long channelNum; /* also from: https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln2240*/
 	void *buffers[2]; /* also from https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln1653
 	 ln 3299 , ln 3300 confirm length of array */
@@ -383,86 +382,6 @@ typedef struct ASIOTime
 	struct AsioTimeInfo	timeInfo;
 	struct ASIOTimeCode	timeCode;
 } ASIOTime;
-
-/* from http://forum.cakewalk.com/m/tm.aspx?m=2232664&p=6 post from Undertow 2/22/2011
- * also http://www.bass.radio42.com/help/html/91b41d4b-9fe6-510c-502c-71156a8bbb5a.htm
- * also http://lakeofsoft.com/vc/doc/unaASIOAPI.ASIOInputMonitor.html
- */
-typedef struct ASIOInputMonitor
-{
-	ASIOBool state;
-	long gain;
-	long pan;
-	long input;
-	long output;
-} ASIOInputMonitor;
-
-/* inferred from http://www.bass.radio42.com/help/html/715c32d7-03f0-211d-977c-8af44744b16c.htm
- * also https://www.codeguru.com/cpp/cpp/cpp_mfc/oop/article.php/c15891/A-Multidevice-ASIO-Output-Plugin-for-WinAMP.htm
- * see zip, WASIO\ASIODevice.cpp(294) can infer all following members except future
- */
-typedef struct ASIOChannelControls
-{
-	ASIOBool isInput;
-	long channel;
-	double gain;
-	long meter;
-	char future[32]; // from http://www.bass.radio42.com/help/html/715c32d7-03f0-211d-977c-8af44744b16c.htm
-}  ASIOChannelControls;
-
-/* from http://www.bass.radio42.com/help/html/7522863c-0484-5473-a354-ef2dbb14d340.htm
- * enum values can be inferred from returning them in hosts
- */
-typedef struct ASIOTransportParameters
-{
-	long command;		// One of the values in the next enum
-	ASIOSamples samplePosition;
-	long track; // track index
-	long trackSwitches[16];
-	char future[64];
-} ASIOTransportParameters;
-
-enum
-{
-	Start = 1,
-	Stop,
-	Locate,
-	PunchIn,
-	PunchOut,
-	ArmOn,
-	ArmOff,
-	MonitorOn,
-	MonitorOff,
-	Arm,
-	Monitor
-};
-
-// from http://www.bass.radio42.com/help/html/8122ccee-4dd5-8034-81f0-a4ebcad47354.htm
-typedef long ASIOIoFormatType;
-enum
-{
-	FormatInvalid = -1,
-	PCMFormat,
-	DSDFormat,
-};
-
-// from http://www.bass.radio42.com/help/html/8122ccee-4dd5-8034-81f0-a4ebcad47354.htm
-typedef struct ASIOIoFormat
-{
-	ASIOIoFormatType	FormatType;
-	char	future[508];
-} ASIOIoFormat;
-
-// from http://jsasio.sourceforge.net/
-typedef struct ASIODriverInfo
-{
-	long asioVersion;		// The asio version. Should always be 2.
-	long driverVersion;		// The driver version
-	char name[32];   // The driver�s name (seems limited to 32 chars)
-	char errorMessage[256]; //The user message of an error that occured during ASIOInit() if any
-	void *sysRef;			/* The sysRef. On windows systems this should be the application�s main window handle. Returns the main application window handle (on windows) or 0. */
-
-} ASIODriverInfo;
 
 /* params for asiofuture
  * from http://www.bass.radio42.com/help/html/1b592b67-9f60-4f5b-1497-7e32666485de.htm
@@ -535,8 +454,7 @@ interface IASIO : public IUnknown
 	virtual ASIOError stop() = 0;
 	virtual ASIOError getChannels(long *numInputChannels, long *numOutputChannels) = 0;
 	virtual ASIOError getLatencies(long *inputLatency, long *outputLatency) = 0;
-	virtual ASIOError getBufferSize(long *minSize, long *maxSize,
-	long *preferredSize, long *granularity) = 0;
+	virtual ASIOError getBufferSize(long *minSize, long *maxSize, long *preferredSize, long *granularity) = 0;
 	virtual ASIOError canSampleRate(ASIOSampleRate sampleRate) = 0;
 	virtual ASIOError getSampleRate(ASIOSampleRate *sampleRate) = 0;
 	virtual ASIOError setSampleRate(ASIOSampleRate sampleRate) = 0;
@@ -550,27 +468,5 @@ interface IASIO : public IUnknown
 	virtual ASIOError future(long selector,void *opt) = 0;
 	virtual ASIOError outputReady() = 0;
 };
-
-/******************************************************************************/
-/*      functions called in portaudio and various hosts, see above            */
-/******************************************************************************/
-ASIOError ASIOStart(void); // https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3324 http://jsasio.sourceforge.net/com/groovemanager/spi/asio/ASIOMixer.html#ASIOStart
-ASIOError ASIOStop(void); // https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3363 http://jsasio.sourceforge.net/com/groovemanager/spi/asio/ASIOMixer.html#ASIOStop
-ASIOError ASIOExit(void); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln4112 https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3324 http://jsasio.sourceforge.net/com/groovemanager/spi/asio/ASIOMixer.html#ASIOExit
-ASIOError ASIOOutputReady(void); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln999
-ASIOError ASIOInit(ASIODriverInfo *info); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln971 http://jsasio.sourceforge.net/com/groovemanager/spi/asio/ASIOMixer.html#ASIOInit
-ASIOError ASIOGetChannels(long *numInputChannels, long *numOutputChannels); //https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln982
-ASIOError ASIOGetClockSources(ASIOClockSource *clock, long *sources); //https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln1916
-ASIOError ASIOGetLatencies(long *inputLatency, long *outputLatency); // https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3220
-ASIOError ASIOGetBufferSize(long *minSize, long *maxSize, long *preferredSize, long *granularity); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln990
-ASIOError ASIOCanSampleRate(ASIOSampleRate sampleRate); // https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln2826
-ASIOError ASIOGetSampleRate(ASIOSampleRate *currentRate); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln1656
-ASIOError ASIOSetSampleRate(ASIOSampleRate sampleRate); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln1977
-ASIOError ASIOGetSamplePosition(ASIOSamples *sPos, ASIOTimeStamp *tStamp); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln2888
-ASIOError ASIOGetChannelInfo(ASIOChannelInfo *info); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln1125
-ASIOError ASIOCreateBuffers(ASIOBufferInfo *bufferInfos, long numChannels, long bufferSize, ASIOCallbacks *callbacks); //https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3163
-ASIOError ASIODisposeBuffers(void); // https://github.com/thestk/rtaudio/blob/master/RtAudio.cpp#ln3122 return type guessed to e as other methods
-ASIOError ASIOControlPanel(void); // https://app.assembla.com/spaces/portaudio/git/source/master/src/hostapi/asio/pa_asio.cpp#ln4101
-ASIOError ASIOFuture(long selector, void *params);//https://managedbass.github.io/api/ManagedBass.Asio.AsioFuture.html
 
 #endif
