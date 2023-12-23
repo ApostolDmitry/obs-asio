@@ -45,11 +45,12 @@ struct asio_data {
 	const char *device;                       // device name
 	uint8_t device_index;                     // device index in the driver list
 	enum speaker_layout speakers;             // speaker layout
-	int sample_rate;                          //44100 or 48000 Hz
+	int sample_rate;                          // 44100 or 48000 Hz
 	std::atomic<bool> stopping;               // signals the source is stopping
-	uint8_t in_channels;                      //total number of input channels
-	uint8_t out_channels;                     //total number of output channels
+	uint8_t in_channels;                      // total number of input channels
+	uint8_t out_channels;                     // total number of output channels
 	int route[MAX_AUDIO_CHANNELS];            // stores the channel re-ordering info
+	std::atomic<bool> active;                 // tracks whether the device is streaming
 };
 
 int get_obs_output_channels()
@@ -1257,7 +1258,7 @@ private:
 				}
 			}
 			if (obs_clients[idx] != nullptr) {
-				if (!obs_clients[idx]->stopping && obs_clients[idx]->source)
+				if (!obs_clients[idx]->stopping && obs_clients[idx]->source && obs_clients[idx]->active)
 					obs_source_output_audio(obs_clients[idx]->source, &out);
 			}
 		}

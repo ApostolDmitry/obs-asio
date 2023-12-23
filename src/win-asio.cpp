@@ -119,6 +119,7 @@ static void *asio_input_create(obs_data_t *settings, obs_source_t *source)
 	int recorded_channels = get_audio_channels(layout);
 	data->out_channels = recorded_channels;
 	data->stopping = false;
+	data->active = true;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		data->route[i] = -1;
 	}
@@ -328,6 +329,16 @@ static void asio_defaults(obs_data_t *settings)
 	}
 }
 
+static void asio_activate(void *vptr) {
+	struct asio_data *data = (struct asio_data *)vptr;
+	data->active = true;
+}
+
+static void asio_deactivate(void *vptr) {
+	struct asio_data *data = (struct asio_data *)vptr;
+	data->active = false;
+}
+
 void register_asio_source()
 {
 	struct obs_source_info asio_input_capture = {};
@@ -340,6 +351,8 @@ void register_asio_source()
 	asio_input_capture.update = asio_update, asio_input_capture.get_defaults = asio_defaults;
 	asio_input_capture.get_properties = asio_input_properties;
 	asio_input_capture.icon_type = OBS_ICON_TYPE_AUDIO_INPUT;
+	asio_input_capture.activate = asio_activate;
+	asio_input_capture.deactivate = asio_deactivate;
 	obs_register_source(&asio_input_capture);
 }
 
