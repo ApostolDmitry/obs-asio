@@ -21,9 +21,11 @@
  * Boston, MA 02110-1301 USA.
  */
 #include <obs-module.h>
+#include <obs-frontend-api.h>
 #include <util/platform.h>
 #include "asio-wrapper.hpp"
 #include "byteorder.h"
+#include <util/threading.h>
 
 #define ASIOCALLBACK __cdecl
 #define ASIO_LOG(level, format, ...) blog(level, "[asio source]: " format, ##__VA_ARGS__)
@@ -346,6 +348,16 @@ static void asioErrorLog(String context, long error)
 	}
 
 	error("error %s - %s", context.c_str(), err);
+}
+
+os_sem_t *shutting_down;
+std::atomic<bool> shutting_down_atomic = false;
+
+static void OBSEvent(enum obs_frontend_event event, void *)
+{
+	if (event == OBS_FRONTEND_EVENT_EXIT || event == OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN) {
+		shutting_down_atomic = true;
+	}
 }
 
 class ASIOAudioIODevice {
@@ -1215,7 +1227,10 @@ private:
 	{
 		if (isStarted) {
 			if (index >= 0)
-				processBuffer(index);
+				if (!shutting_down_atomic)
+					processBuffer(index);
+				else
+					os_sem_post(shutting_down);
 		} else {
 			if (postOutput && (asioObject != nullptr))
 				asioObject->outputReady();
@@ -1247,19 +1262,24 @@ private:
 		out.frames = samps;
 
 		for (int idx = 0; idx < obs_clients.size(); idx++) {
-			output_channels = obs_clients[idx]->out_channels;
-			out.speakers = (enum speaker_layout)output_channels;
-			for (int j = 0; j < output_channels; j++) {
-				if (obs_clients[idx] != nullptr) {
-					if (obs_clients[idx]->route[j] >= 0 && !obs_clients[idx]->stopping)
-						out.data[j] = (uint8_t *)inBuffers[obs_clients[idx]->route[j]];
-					else
-						out.data[j] = (uint8_t *)silentBuffers;
-				}
-			}
 			if (obs_clients[idx] != nullptr) {
-				if (!obs_clients[idx]->stopping && obs_clients[idx]->source && obs_clients[idx]->active)
-					obs_source_output_audio(obs_clients[idx]->source, &out);
+				if (obs_clients[idx]->device) {
+					output_channels = obs_clients[idx]->out_channels;
+					out.speakers = (enum speaker_layout)output_channels;
+					for (int j = 0; j < output_channels; j++) {
+						if (obs_clients[idx] != nullptr) {
+							if (obs_clients[idx]->route[j] >= 0 &&
+							    !obs_clients[idx]->stopping)
+								out.data[j] = (uint8_t *)
+									inBuffers[obs_clients[idx]->route[j]];
+							else
+								out.data[j] = (uint8_t *)silentBuffers;
+						}
+					}
+					if (!obs_clients[idx]->stopping && obs_clients[idx]->source &&
+					    obs_clients[idx]->active)
+						obs_source_output_audio(obs_clients[idx]->source, &out);
+				}
 			}
 		}
 		// Writing silent audio : the outBuffers were calloc'd so they're silent.
